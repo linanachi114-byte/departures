@@ -1,0 +1,273 @@
+/* ============================================
+   Departures — 菜单样式 (menu.css)
+   主菜单、存档/读档、历史记录、设置面板
+   ============================================ */
+
+/* =============================================
+   主菜单
+   ============================================= */
+#menu-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#menu-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 10, 0.92);
+    pointer-events: none; /* 不阻挡子元素（菜单按钮）的点击 */
+}
+
+#menu-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+#menu-title {
+    font-size: 52px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    color: #e0e0e0;
+    margin-bottom: 4px;
+}
+
+#menu-subtitle {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 50px;
+    letter-spacing: 6px;
+}
+
+#menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+}
+
+#menu-buttons button {
+    width: 200px;
+    padding: 12px 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #aaa;
+    font-size: 16px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+#menu-buttons button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+#menu-buttons button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* =============================================
+   存档/读档面板
+   ============================================= */
+#save-load-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#sl-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 10, 0.9);
+}
+
+#sl-content {
+    position: relative;
+    z-index: 1;
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 30px;
+    width: 560px;
+    max-height: 80vh;
+}
+
+#sl-content h2 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    color: #ccc;
+    margin-bottom: 20px;
+    letter-spacing: 3px;
+}
+
+#sl-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* 单个存档槽位 */
+.sl-slot {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sl-slot:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sl-slot-number {
+    width: 36px;
+    font-size: 14px;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.sl-slot-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sl-slot-day {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.sl-slot-detail {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.sl-slot-empty {
+    font-size: 13px;
+    color: #444;
+    font-style: italic;
+}
+
+.sl-slot-delete {
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid rgba(255, 80, 80, 0.3);
+    color: rgba(255, 80, 80, 0.6);
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.sl-slot-delete:hover {
+    background: rgba(255, 80, 80, 0.1);
+    color: rgba(255, 80, 80, 0.9);
+}
+
+/* =============================================
+   历史记录面板
+   ============================================= */
+#history-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#history-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 10, 0.9);
+}
+
+#history-content {
+    position: relative;
+    z-index: 1;
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 30px;
+    width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#history-content h2 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    color: #ccc;
+    margin-bottom: 16px;
+    letter-spacing: 3px;
+}
+
+#history-log {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #aaa;
+    padding-right: 8px;
+}
+
+#history-log .hl-entry {
+    margin-bottom: 6px;
+}
+
+#history-log .hl-speaker {
+    color: #8ab4f8;
+    font-weight: bold;
+}
+
+#history-log .hl-speaker.narrator {
+    color: #888;
+    font-style: italic;
+}
+
+#history-log .hl-text {
+    color: #ccc;
+}
+
+/* =============================================
+   通用关闭按钮
+   ============================================= */
+.sl-close-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 8px 32px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.sl-close-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ccc;
+}

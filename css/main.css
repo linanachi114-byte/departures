@@ -1,0 +1,217 @@
+/* ============================================
+   Departures — 主样式 (main.css)
+   定义视觉小说主界面的所有样式
+   风格：深色主题、简约、忧伤氛围
+   ============================================ */
+
+/* --- 全局重置 --- */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    color: #d0d0d0;
+    background: #0a0a0a;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- 工具类：隐藏 --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- 游戏容器：全屏居中 --- */
+#game-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- 背景层 --- */
+#background-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    transition: background 2s ease;
+    /* 默认深色渐变 */
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+/* 背景预设（通过 JS 切换类名来改变背景） */
+#background-layer.bg-gray {
+    background: linear-gradient(180deg, #2c2c2c 0%, #3a3a3a 100%);
+}
+#background-layer.bg-pink {
+    background: linear-gradient(180deg, #4a1942 0%, #6b2d5b 50%, #3d1f3d 100%);
+}
+#background-layer.bg-purple {
+    background: linear-gradient(180deg, #2d1b69 0%, #4a2c8a 50%, #1a0f40 100%);
+}
+#background-layer.bg-red {
+    background: linear-gradient(180deg, #4a1a1a 0%, #6b2020 50%, #3a0f0f 100%);
+}
+#background-layer.bg-black {
+    background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+}
+#background-layer.bg-white {
+    background: linear-gradient(180deg, #e8e8e8 0%, #f5f5f5 100%);
+}
+/* 场景：事务所室内 */
+#background-layer.bg-interior {
+    background: linear-gradient(180deg, #2a2420 0%, #3a3028 50%, #1e1a16 100%);
+}
+/* 场景：室内暗色（晚上） */
+#background-layer.bg-night {
+    background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+}
+/* 场景：白色（尾声） */
+#background-layer.bg-final {
+    background: linear-gradient(180deg, #f0f0f0 0%, #ffffff 100%);
+}
+
+/* --- 视觉小说对话界面 --- */
+#vn-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* 顶部功能栏 */
+#top-bar {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+}
+
+#top-bar button {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #aaa;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+#top-bar button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+#top-bar button.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 天数指示器（左上角） */
+#day-indicator {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 20;
+    letter-spacing: 1px;
+}
+
+/* 对话文本框 */
+#dialogue-box {
+    position: relative;
+    width: 100%;
+    min-height: 200px;
+    max-height: 45vh;
+    background: rgba(10, 10, 15, 0.88);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 20px 30px 24px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#dialogue-box:hover {
+    background: rgba(15, 15, 22, 0.92);
+}
+
+/* 说话人名字 */
+#speaker-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #8ab4f8;
+    margin-bottom: 8px;
+    min-height: 22px;
+    letter-spacing: 1px;
+    transition: color 0.3s;
+}
+
+/* 旁白样式（无名说话者） */
+#speaker-name.narrator {
+    color: #888;
+    font-style: italic;
+}
+
+/* 对话文本 */
+#dialogue-text {
+    font-size: 17px;
+    line-height: 1.8;
+    color: #d8d8d8;
+    min-height: 60px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 继续提示箭头 */
+#dialogue-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 24px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.3);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+}
+
+/* --- 通知提示 --- */
+#notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #d0d0d0;
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-size: 15px;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: notifIn 0.3s ease, notifOut 0.3s ease 1.7s forwards;
+}
+
+@keyframes notifIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes notifOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}

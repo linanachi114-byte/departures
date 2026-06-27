@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departures — 入俭师</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/minigame.css">
+    <link rel="stylesheet" href="css/evening.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+    <!-- 加载/错误提示 -->
+    <div id="loading-error" style="display:none;position:fixed;inset:0;background:#111;color:#f88;padding:40px;font-size:18px;z-index:9999;overflow:auto;text-align:center;">
+        <h2>游戏加载失败</h2>
+        <p id="error-message"></p>
+        <p style="font-size:14px;color:#888;margin-top:20px;">请打开浏览器控制台(F12)查看详细错误信息</p>
+        <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;font-size:16px;cursor:pointer;background:#333;color:#fff;border:1px solid #555;border-radius:4px;">刷新页面</button>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 主游戏容器                                     -->
+    <!-- ============================================ -->
+    <div id="game-container">
+
+        <!-- 背景层：用 CSS 渐变模拟场景背景 -->
+        <div id="background-layer"></div>
+
+        <!-- 主游戏界面（视觉小说对话界面） -->
+        <div id="vn-ui" class="hidden">
+            <!-- 右上角功能按钮 -->
+            <div id="top-bar">
+                <button id="btn-settings" title="设置">⚙</button>
+                <button id="btn-save" title="存档">💾</button>
+                <button id="btn-load" title="读档">📂</button>
+                <button id="btn-history" title="历史记录">📖</button>
+                <button id="btn-auto" title="自动播放">A</button>
+                <button id="btn-skip" title="快进">⏩</button>
+            </div>
+
+            <!-- 对话文本框 -->
+            <div id="dialogue-box">
+                <div id="speaker-name"></div>
+                <div id="dialogue-text"></div>
+                <div id="dialogue-hint">点击继续 ▸</div>
+            </div>
+
+            <!-- 天数/阶段显示 -->
+            <div id="day-indicator"></div>
+        </div>
+
+        <!-- 入俭小游戏界面 -->
+        <div id="minigame-ui" class="hidden">
+            <div id="minigame-header">
+                <span id="minigame-title">入俭中…</span>
+                <button id="btn-minigame-skip" title="跳过">跳过 ▸</button>
+            </div>
+            <div id="minigame-area">
+                <!-- 小游戏内容动态插入此处 -->
+            </div>
+            <div id="minigame-status"></div>
+        </div>
+
+        <!-- 晚间休息界面 -->
+        <div id="evening-ui" class="hidden">
+            <div id="evening-tabs">
+                <button class="evening-tab active" data-tab="phone">📱 手机</button>
+                <button class="evening-tab" data-tab="room">🏠 房间</button>
+            </div>
+            <div id="evening-content">
+                <!-- 手机/房间内容动态插入此处 -->
+            </div>
+            <div id="evening-footer">
+                <span id="evening-money"></span>
+                <button id="btn-sleep" title="睡觉，进入下一天">睡一觉吧</button>
+            </div>
+        </div>
+
+        <!-- 主菜单界面 -->
+        <div id="menu-ui">
+            <div id="menu-overlay"></div>
+            <div id="menu-content">
+                <h1 id="menu-title">Departures</h1>
+                <p id="menu-subtitle">入俭师</p>
+                <div id="menu-buttons">
+                    <button id="btn-new-game">新游戏</button>
+                    <button id="btn-continue">继续</button>
+                    <button id="btn-settings-menu">设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 存档/读档界面 -->
+        <div id="save-load-ui" class="hidden">
+            <div id="sl-overlay"></div>
+            <div id="sl-content">
+                <h2 id="sl-title">存档</h2>
+                <div id="sl-slots"></div>
+                <button id="btn-sl-close" class="sl-close-btn">关闭</button>
+            </div>
+        </div>
+
+        <!-- 历史记录界面 -->
+        <div id="history-ui" class="hidden">
+            <div id="history-overlay"></div>
+            <div id="history-content">
+                <h2>历史记录</h2>
+                <div id="history-log"></div>
+                <button id="btn-history-close" class="sl-close-btn">关闭</button>
+            </div>
+        </div>
+
+        <!-- 设置界面 -->
+        <div id="settings-ui" class="hidden">
+            <div id="settings-overlay"></div>
+            <div id="settings-content">
+                <h2>设置</h2>
+                <div class="setting-row">
+                    <label>文本显示速度</label>
+                    <input type="range" id="setting-speed" min="1" max="10" value="5">
+                    <span id="speed-value">5</span>
+                </div>
+                <div class="setting-row">
+                    <label>自动播放速度</label>
+                    <input type="range" id="setting-auto-speed" min="1" max="10" value="5">
+                    <span id="auto-speed-value">5</span>
+                </div>
+                <div class="setting-row">
+                    <label>主音量</label>
+                    <input type="range" id="setting-volume" min="0" max="100" value="80">
+                    <span id="volume-value">80%</span>
+                </div>
+                <button id="btn-settings-close" class="sl-close-btn">关闭</button>
+            </div>
+        </div>
+
+        <!-- 通知提示 -->
+        <div id="notification" class="hidden"></div>
+    </div>
+
+    <!-- 按顺序加载 JS 模块（模块间通过全局 Game 对象通信，保持低耦合） -->
+    <script src="js/engine.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/minigame.js"></script>
+    <script src="js/evening.js"></script>
+    <script src="js/data/days.js"></script>
+    <script src="js/data/news.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
