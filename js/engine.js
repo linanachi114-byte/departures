@@ -24,9 +24,29 @@ const VNEngine = (function () {
     let isAutoPlay = false;     // 自动播放是否开启
     let isSkip = false;         // 跳过模式是否开启
     let onCompleteCallback = null; // 场景完成时的回调
+    let currentRightCharacter = ''; // 当前右侧委托人立绘
 
     // --- DOM 引用（延迟获取，避免空引用）---
     let dom = {};
+
+    const CHARACTER_SPRITES = {
+        '你': 'images/characters/入殓师.png',
+        '入殓师': 'images/characters/入殓师.png',
+        '林柚': 'images/characters/林柚.png',
+        '林建国': 'images/characters/林建国.png',
+        '赵国强': 'images/characters/赵国强.png',
+        '赵德明': 'images/characters/赵德明.png',
+        '苏晚': 'images/characters/苏晚.png',
+        '周明远': 'images/characters/周明远.png',
+        '陈念': 'images/characters/陈念.png',
+        '白羽': 'images/characters/白羽.png',
+        '吴敏': 'images/characters/吴敏.png',
+        '吴静宜': 'images/characters/吴静宜.png',
+        '秦守业': 'images/characters/秦守业.png',
+        '桂英': 'images/characters/桂英.png',
+        '秦桂英': 'images/characters/桂英.png',
+        '镜像委托人': 'images/characters/镜像委托人.png',
+    };
 
     // --- 初始化引擎 ---
     /**
@@ -43,6 +63,8 @@ const VNEngine = (function () {
             dialogueHint: document.getElementById('dialogue-hint'),
             dayIndicator: document.getElementById('day-indicator'),
             dialogueBox: document.getElementById('dialogue-box'),
+            spriteLeft: document.getElementById('sprite-left'),
+            spriteRight: document.getElementById('sprite-right'),
         };
 
         // 安全处理：确保 DOM 元素存在
@@ -57,6 +79,8 @@ const VNEngine = (function () {
         // 键盘快捷键
         document.addEventListener('keydown', handleKeyboard);
         document.addEventListener('keyup', handleKeyup);
+
+        initCharacterSprites();
     }
 
     // --- 加载场景脚本 ---
@@ -84,6 +108,8 @@ const VNEngine = (function () {
         stopAutoPlay();
         setSkipMode(false);
         onCompleteCallback = null;
+        currentRightCharacter = '';
+        updateCharacterSprites('');
 
         // 隐藏其他界面，显示 VN 界面
         hideAllUI();
@@ -122,6 +148,8 @@ const VNEngine = (function () {
             dom.speakerName.classList.add('narrator');
             dom.speakerName.style.color = '';
         }
+
+        updateCharacterSprites(speaker);
 
         // 设置背景
         if (bg) {
@@ -175,10 +203,13 @@ const VNEngine = (function () {
         }
     }
 
-    function stopAutoPlay() {
+    function stopAutoPlay(revealText) {
         if (autoPlayTimer) {
             clearTimeout(autoPlayTimer);
             autoPlayTimer = null;
+        }
+        if (revealText && isTyping) {
+            revealCurrentText();
         }
         isAutoPlay = false;
         const btn = document.getElementById('btn-auto');
@@ -186,11 +217,19 @@ const VNEngine = (function () {
     }
 
     function toggleAutoPlay() {
-        isAutoPlay = !isAutoPlay;
-        if (isAutoPlay) setSkipMode(false);
+        if (isAutoPlay) {
+            stopAutoPlay(true);
+            return false;
+        }
+
+        isAutoPlay = true;
+        setSkipMode(false);
         const btn = document.getElementById('btn-auto');
-        if (btn) btn.classList.toggle('active', isAutoPlay);
-        return isAutoPlay;
+        if (btn) btn.classList.add('active');
+
+        if (isTyping) revealCurrentText();
+        scheduleAutoAdvance();
+        return true;
     }
 
     // --- 执行下一条指令 ---
@@ -274,6 +313,7 @@ const VNEngine = (function () {
      */
     function showDialogue(speaker, text, color) {
         stopTypewriter(); // 先停止任何正在进行的打字机
+        updateCharacterSprites(speaker);
 
         // 设置说话人名字
         if (speaker) {
@@ -293,12 +333,7 @@ const VNEngine = (function () {
         // 自动播放模式：打字机效果，完成后自动推进
         if (isAutoPlay && !isSkip) {
             typewriterEffect(text, function () {
-                // 打字机完成后，自动推进到下一条
-                const autoSpeed = typeof GameSettings !== 'undefined' ? GameSettings.getAutoSpeed() : 5;
-                // 打字完成后再停留一段时间让用户阅读
-                autoPlayTimer = setTimeout(() => {
-                    handleDialogueClick();
-                }, 800 / autoSpeed);
+                if (isAutoPlay && !isSkip) scheduleAutoAdvance();
             });
             return;
         }
@@ -318,6 +353,55 @@ const VNEngine = (function () {
     function showNarration(text, bg) {
         if (bg) setScene(bg);
         showDialogue('', text);
+    }
+
+    function initCharacterSprites() {
+        if (!dom.spriteLeft || !dom.spriteRight) return;
+        dom.spriteLeft.src = CHARACTER_SPRITES['你'];
+        dom.spriteLeft.classList.remove('hidden');
+        dom.spriteRight.classList.add('hidden');
+        updateCharacterSprites('');
+    }
+
+    function updateCharacterSprites(speaker) {
+        if (!dom.spriteLeft || !dom.spriteRight) return;
+
+        dom.spriteLeft.src = CHARACTER_SPRITES['你'];
+        dom.spriteLeft.classList.remove('hidden', 'speaking');
+        dom.spriteRight.classList.remove('speaking');
+
+        if (speaker && speaker !== '你') {
+            var rightSrc = CHARACTER_SPRITES[speaker];
+            if (rightSrc) {
+                currentRightCharacter = speaker;
+                dom.spriteRight.src = rightSrc;
+                dom.spriteRight.alt = speaker + '立绘';
+                dom.spriteRight.classList.remove('hidden');
+            }
+        } else if (currentRightCharacter && CHARACTER_SPRITES[currentRightCharacter]) {
+            dom.spriteRight.src = CHARACTER_SPRITES[currentRightCharacter];
+            dom.spriteRight.alt = currentRightCharacter + '立绘';
+            dom.spriteRight.classList.remove('hidden');
+        } else {
+            dom.spriteRight.classList.add('hidden');
+        }
+
+        if (speaker === '你') {
+            dom.spriteLeft.classList.add('speaking');
+        } else if (speaker && speaker !== '你' && !dom.spriteRight.classList.contains('hidden')) {
+            dom.spriteRight.classList.add('speaking');
+        }
+    }
+
+    function restoreRightCharacterFromScript(commands, startIndex) {
+        currentRightCharacter = '';
+        for (var i = Math.min(startIndex, commands.length - 1); i >= 0; i--) {
+            var cmd = commands[i];
+            if (cmd && cmd.speaker && cmd.speaker !== '你' && CHARACTER_SPRITES[cmd.speaker]) {
+                currentRightCharacter = cmd.speaker;
+                return;
+            }
+        }
     }
 
     // --- 打字机效果 ---
@@ -363,6 +447,19 @@ const VNEngine = (function () {
         if (command && command.text) {
             dom.dialogueText.textContent = command.text;
         }
+    }
+
+    function scheduleAutoAdvance() {
+        if (!isAutoPlay || isSkip || dom.vnUi.classList.contains('hidden')) return;
+        if (autoPlayTimer) clearTimeout(autoPlayTimer);
+        const autoSpeed = typeof GameSettings !== 'undefined' ? GameSettings.getAutoSpeed() : 5;
+        const delay = Math.max(220, 1200 - autoSpeed * 90);
+        autoPlayTimer = setTimeout(function () {
+            autoPlayTimer = null;
+            if (isAutoPlay && !isSkip && !dom.vnUi.classList.contains('hidden')) {
+                executeNext();
+            }
+        }, delay);
     }
 
     // --- 处理对话框点击 ---
@@ -539,10 +636,12 @@ const VNEngine = (function () {
         setSkipMode(false);
         onCompleteCallback = null;
         syncGameProgress(startIndex);
+        restoreRightCharacterFromScript(commands, startIndex);
 
         // 隐藏其他界面，显示 VN 界面
         hideAllUI();
         dom.vnUi.classList.remove('hidden');
+        updateCharacterSprites('');
 
         if (startIndex < commands.length && displayedText) {
             // 直接显示存档时的文本和背景
@@ -563,6 +662,8 @@ const VNEngine = (function () {
         setSkipMode(false);
         onCompleteCallback = null;
         syncGameProgress(Math.max(0, currentIndex - 1));
+        restoreRightCharacterFromScript(commands, Math.max(0, currentIndex - 1));
+        updateCharacterSprites('');
     }
 
     function scheduleSkipStep() {

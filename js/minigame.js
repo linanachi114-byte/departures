@@ -1,37 +1,27 @@
 /**
  * ============================================================
  * 入俭小游戏模块 (minigame.js)
- * ============================================================
- * 职责：
- *  1. 渲染入俭小游戏界面
- *  2. 处理四种小游戏类型的交互：
- *     - dressing: 多步骤穿衣/戴饰品（点击完成步骤）
- *     - hold: 长按持续（打粉/擦拭）
- *     - wipe: 拖拽清洁（鼠标/触摸擦除）
- *     - review: 滑动回顾（第七天用）
- *  3. 小游戏完成后回调到 GameController
- *
- *  与其他模块解耦：通过 GameController.onMinigameComplete 回调
  * ============================================================ */
 
 const GameMinigame = (function () {
 
-    // --- 内部状态 ---
-    let currentData = null;       // 当前小游戏的配置数据
-    let currentType = '';         // 小游戏类型
-    let holdTimer = null;         // 长按定时器
-    let holdProgress = 0;         // 长按进度
-    let wipeCleared = 0;          // 擦拭清除的像素数
-    let wipeTotal = 0;            // 擦拭区域总像素数
-    let reviewIndex = 0;          // 回顾模式当前索引
-    let completedSteps = 0;       // 已完成步骤数
+    let currentData = null;
+    let currentType = '';
+    let completedSteps = 0;
+    let wipeCleared = 0;
+    let wipeTotal = 0;
+    let reviewIndex = 0;
+    let isCompleting = false;
 
-    // --- DOM 引用 ---
     let dom = {};
 
-    /**
-     * 初始化小游戏模块，绑定 DOM 引用
-     */
+    const RITUAL_NOTES = {
+        dressing: ['整理衣物', '确认随葬物', '复核委托'],
+        hold: ['稳定动作', '维持力度', '等待完成'],
+        wipe: ['清洁面部', '擦去痕迹', '恢复平静'],
+        review: ['翻阅记录', '确认姓名', '送别世界'],
+    };
+
     function init() {
         dom = {
             ui: document.getElementById('minigame-ui'),
@@ -41,14 +31,9 @@ const GameMinigame = (function () {
             skipBtn: document.getElementById('btn-minigame-skip'),
         };
 
-        // 跳过按钮
         dom.skipBtn.addEventListener('click', skipMinigame);
     }
 
-    /**
-     * 开始一个入俭小游戏
-     * @param {Object} data - 小游戏配置数据
-     */
     function start(data) {
         currentData = data;
         currentType = data.type;
@@ -56,26 +41,29 @@ const GameMinigame = (function () {
         wipeCleared = 0;
         wipeTotal = 0;
         reviewIndex = 0;
+        isCompleting = false;
 
-        // 显示小游戏界面
         dom.ui.classList.remove('hidden');
-        dom.area.className = 'mini-type-' + currentType;
-        dom.area.innerHTML = ''; // 清空上次内容
+        dom.area.className = 'mini-workstation mini-type-' + currentType;
+        dom.area.innerHTML = '';
         dom.status.textContent = '';
+        dom.title.textContent = data.name + ' / 入俭记录';
 
-        // 根据类型渲染不同的小游戏
+        const shell = createWorkstation(data);
+        dom.area.appendChild(shell.root);
+
         switch (currentType) {
             case 'dressing':
-                renderDressing(data);
+                renderDressing(data, shell);
                 break;
             case 'hold':
-                renderHold(data);
+                renderHold(data, shell);
                 break;
             case 'wipe':
-                renderWipe(data);
+                renderWipe(data, shell);
                 break;
             case 'review':
-                renderReview(data);
+                renderReview(data, shell);
                 break;
             default:
                 console.warn('Unknown minigame type:', currentType);
@@ -83,325 +71,320 @@ const GameMinigame = (function () {
         }
     }
 
-    // ================================================================
-    // 小游戏类型 1: 多步骤穿衣
-    // ================================================================
-    /**
-     * 渲染多步骤小游戏（穿衣/戴饰品）
-     * 玩家依次点击每个步骤，完成全部步骤后小游戏结束
-     */
-    function renderDressing(data) {
-        dom.title.textContent = data.name + ' — 入俭中…';
+    function createWorkstation(data) {
+        const root = document.createElement('div');
+        root.className = 'mini-shell';
 
-        dom.area.appendChild(renderTaskCard(data));
+        const dossier = document.createElement('aside');
+        dossier.className = 'mini-dossier';
+        dossier.innerHTML = '<div class="mini-panel-title">委托档案</div>'
+            + '<div class="mini-deceased-name">' + data.name + '</div>'
+            + '<div class="mini-case-type">' + getTypeLabel(data.type) + '</div>'
+            + '<p class="mini-case-desc">' + (data.desc || '认真完成最后的整理。') + '</p>'
+            + '<div class="mini-checklist">'
+            + (RITUAL_NOTES[data.type] || []).map(function (note, index) {
+                return '<span class="mini-checkline" data-note="' + index + '">' + note + '</span>';
+            }).join('')
+            + '</div>';
 
+        const stage = document.createElement('section');
+        stage.className = 'mini-stage';
+        stage.innerHTML = '<div class="mini-roomline"></div>'
+            + '<div class="mini-body-table">'
+            + '<div class="mini-pillow"></div>'
+            + '<div class="mini-body-silhouette"><span></span></div>'
+            + '<div class="mini-table-edge"></div>'
+            + '</div>';
+
+        const controls = document.createElement('aside');
+        controls.className = 'mini-controls';
+        controls.innerHTML = '<div class="mini-panel-title">工具盘</div>';
+
+        const log = document.createElement('div');
+        log.className = 'mini-log';
+        log.innerHTML = '<div class="mini-log-line">系统：等待操作。</div>';
+
+        root.appendChild(dossier);
+        root.appendChild(stage);
+        root.appendChild(controls);
+        root.appendChild(log);
+
+        return { root, dossier, stage, controls, log };
+    }
+
+    function getTypeLabel(type) {
+        if (type === 'dressing') return '着装 / 随葬物';
+        if (type === 'hold') return '持续整理';
+        if (type === 'wipe') return '清洁';
+        if (type === 'review') return '最终回顾';
+        return '入俭';
+    }
+
+    function addLog(shell, text) {
+        const line = document.createElement('div');
+        line.className = 'mini-log-line';
+        line.textContent = text;
+        shell.log.appendChild(line);
+        shell.log.scrollTop = shell.log.scrollHeight;
+    }
+
+    function markChecklist(shell, index) {
+        const item = shell.dossier.querySelector('[data-note="' + index + '"]');
+        if (item) item.classList.add('done');
+    }
+
+    function updateProgress(percent, message) {
+        const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+        dom.status.textContent = message + ' ' + clamped + '%';
+        dom.area.style.setProperty('--mini-progress', clamped + '%');
+        dom.ui.style.setProperty('--mini-progress', clamped + '%');
+    }
+
+    function renderDressing(data, shell) {
         const list = document.createElement('div');
-        list.className = 'mini-step-list';
+        list.className = 'mini-tool-list';
 
         data.steps.forEach(function (step, index) {
-            const item = document.createElement('div');
-            item.className = index === 0 ? 'mini-step-item active' : 'mini-step-item';
-            item.innerHTML = '<span class="mini-step-icon">' + step.icon + '</span>'
-                + '<span class="mini-step-text">' + step.text + '</span>'
-                + '<span class="mini-step-check">✓</span>';
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = index === 0 ? 'mini-tool-item active' : 'mini-tool-item';
+            item.innerHTML = '<span class="mini-tool-icon">' + step.icon + '</span>'
+                + '<span class="mini-tool-text">' + step.text + '</span>'
+                + '<span class="mini-tool-state">待处理</span>';
 
             item.addEventListener('click', function () {
-                // 只有当前步骤可以完成
-                if (index === completedSteps) {
-                    item.classList.add('completed');
-                    item.classList.remove('active');
-                    completedSteps++;
-                    dom.status.textContent = '完成 ' + completedSteps + '/' + data.steps.length;
-                    const next = list.querySelectorAll('.mini-step-item')[completedSteps];
-                    if (next) next.classList.add('active');
+                if (index !== completedSteps || isCompleting) return;
+                item.classList.add('completed');
+                item.classList.remove('active');
+                item.querySelector('.mini-tool-state').textContent = '完成';
+                addLog(shell, '记录：' + step.text);
+                completedSteps++;
+                markChecklist(shell, Math.min(index, 2));
+                updateProgress((completedSteps / data.steps.length) * 100, '仪式进度');
 
-                    if (completedSteps >= data.steps.length) {
-                        minigameComplete();
-                    }
+                const next = list.querySelectorAll('.mini-tool-item')[completedSteps];
+                if (next) {
+                    next.classList.add('active');
+                    next.querySelector('.mini-tool-state').textContent = '当前';
                 }
+
+                if (completedSteps >= data.steps.length) finishWithDelay(shell, '复核完成。');
             });
 
             list.appendChild(item);
         });
 
-        dom.area.appendChild(list);
-        dom.status.textContent = '点击每个步骤完成任务';
+        const first = list.querySelector('.mini-tool-state');
+        if (first) first.textContent = '当前';
+        shell.controls.appendChild(list);
+        addLog(shell, '系统：按委托顺序完成每个步骤。');
+        updateProgress(0, '仪式进度');
     }
 
-    // ================================================================
-    // 小游戏类型 2: 长按持续
-    // ================================================================
-    /**
-     * 渲染长按小游戏（打粉/擦拭）
-     * 玩家需要按住按钮持续指定时间
-     */
-    function renderHold(data) {
-        dom.title.textContent = data.name + ' — 入俭中…';
+    function renderHold(data, shell) {
+        const hold = document.createElement('button');
+        hold.type = 'button';
+        hold.className = 'mini-hold-pad';
+        hold.innerHTML = '<span>按住工具</span><strong>保持稳定</strong>';
 
-        dom.area.appendChild(renderTaskCard(data));
+        const gauge = document.createElement('div');
+        gauge.className = 'mini-hold-gauge';
+        gauge.innerHTML = '<div class="mini-hold-fill"></div>';
+        const fill = gauge.querySelector('.mini-hold-fill');
 
-        const btn = document.createElement('div');
-        btn.className = 'mini-hold-btn';
-        btn.innerHTML = '<span>按住</span><strong>保持动作</strong>';
+        shell.controls.appendChild(hold);
+        shell.controls.appendChild(gauge);
 
-        const progressBar = document.createElement('div');
-        progressBar.className = 'mini-hold-progress';
-        const bar = document.createElement('div');
-        bar.className = 'mini-hold-progress-bar';
-        progressBar.appendChild(bar);
+        let startTime = 0;
+        let holding = false;
 
-        dom.area.appendChild(btn);
-        dom.area.appendChild(progressBar);
-
-        let holdStart = 0;
-        let isHolding = false;
-
-        function startHold(e) {
+        function begin(e) {
             e.preventDefault();
-            isHolding = true;
-            holdStart = Date.now();
-            btn.classList.add('holding');
-            btn.innerHTML = '<span>进行中</span><strong>请保持</strong>';
-            animateHold();
+            if (isCompleting) return;
+            holding = true;
+            startTime = Date.now();
+            hold.classList.add('holding');
+            hold.innerHTML = '<span>正在处理</span><strong>不要松手</strong>';
+            addLog(shell, '记录：动作开始。');
+            animate();
         }
 
-        function endHold(e) {
-            e.preventDefault();
-            if (!isHolding) return;
-            isHolding = false;
-            btn.classList.remove('holding');
-            btn.innerHTML = '<span>按住</span><strong>保持动作</strong>';
-            bar.style.width = '0%';
+        function stop(e) {
+            if (e) e.preventDefault();
+            if (!holding) return;
+            holding = false;
+            fill.style.width = '0%';
+            hold.classList.remove('holding');
+            hold.innerHTML = '<span>按住工具</span><strong>保持稳定</strong>';
+            addLog(shell, '提示：动作中断，重新校准。');
+            updateProgress(0, '稳定度');
         }
 
-        // 鼠标事件
-        btn.addEventListener('mousedown', startHold);
-        btn.addEventListener('mouseup', endHold);
-        btn.addEventListener('mouseleave', endHold);
+        function animate() {
+            if (!holding) return;
+            const progress = Math.min(100, ((Date.now() - startTime) / (data.duration || 3000)) * 100);
+            fill.style.width = progress + '%';
+            updateProgress(progress, '稳定度');
 
-        // 触摸事件
-        btn.addEventListener('touchstart', startHold, { passive: false });
-        btn.addEventListener('touchend', endHold);
+            if (progress > 34) markChecklist(shell, 0);
+            if (progress > 67) markChecklist(shell, 1);
 
-        function animateHold() {
-            if (!isHolding) return;
-            const elapsed = Date.now() - holdStart;
-            const progress = Math.min(100, (elapsed / data.duration) * 100);
-            bar.style.width = progress + '%';
-
-            if (elapsed >= data.duration) {
-                isHolding = false;
-                btn.classList.remove('holding');
-                btn.innerHTML = '<span>完成</span><strong>已经整理好</strong>';
-                btn.style.background = 'rgba(100, 200, 100, 0.15)';
-                setTimeout(minigameComplete, 500);
+            if (progress >= 100) {
+                holding = false;
+                hold.classList.remove('holding');
+                hold.classList.add('completed');
+                hold.innerHTML = '<span>完成</span><strong>动作平稳</strong>';
+                markChecklist(shell, 2);
+                finishWithDelay(shell, '整理完成。');
                 return;
             }
 
-            requestAnimationFrame(animateHold);
+            requestAnimationFrame(animate);
         }
+
+        hold.addEventListener('mousedown', begin);
+        hold.addEventListener('mouseup', stop);
+        hold.addEventListener('mouseleave', stop);
+        hold.addEventListener('touchstart', begin, { passive: false });
+        hold.addEventListener('touchend', stop);
+
+        addLog(shell, '系统：长按工具，保持动作稳定。');
+        updateProgress(0, '稳定度');
     }
 
-    // ================================================================
-    // 小游戏类型 3: 拖拽擦拭
-    // ================================================================
-    /**
-     * 渲染拖拽擦拭小游戏
-     * 玩家用鼠标/触摸在区域上拖拽，擦除覆盖层
-     */
-    function renderWipe(data) {
-        dom.title.textContent = data.name + ' — 入俭中…';
+    function renderWipe(data, shell) {
+        const wipePad = document.createElement('div');
+        wipePad.className = 'mini-wipe-pad';
+        wipePad.innerHTML = '<div class="mini-wipe-face"></div><div class="mini-wipe-mask"></div><span>拖拽清洁</span>';
+        const mask = wipePad.querySelector('.mini-wipe-mask');
+        const hint = wipePad.querySelector('span');
 
-        dom.area.appendChild(renderTaskCard(data));
+        shell.stage.appendChild(wipePad);
 
-        const area = document.createElement('div');
-        area.className = 'mini-wipe-area';
-        area.innerHTML = '<div class="mini-wipe-surface"></div>';
+        let wiping = false;
 
-        const overlay = document.createElement('div');
-        overlay.className = 'mini-wipe-overlay';
-        overlay.style.opacity = '1';
-
-        const hint = document.createElement('div');
-        hint.className = 'mini-wipe-hint';
-        hint.textContent = '拖拽擦拭清洁…';
-
-        area.appendChild(overlay);
-        area.appendChild(hint);
-        dom.area.appendChild(area);
-
-        let isErasing = false;
-
-        function startErase(e) {
+        function begin(e) {
             e.preventDefault();
-            isErasing = true;
-            hint.style.display = 'none';
-            eraseAt(e);
+            wiping = true;
+            hint.textContent = '';
+            erase();
         }
 
-        function moveErase(e) {
-            if (!isErasing) return;
+        function move(e) {
+            if (!wiping) return;
             e.preventDefault();
-            eraseAt(e);
+            erase();
         }
 
-        function endErase(e) {
+        function stop(e) {
             if (e) e.preventDefault();
-            isErasing = false;
+            wiping = false;
         }
 
-        // 鼠标事件
-        area.addEventListener('mousedown', startErase);
-        document.addEventListener('mousemove', moveErase);
-        document.addEventListener('mouseup', endErase);
+        function erase() {
+            wipeCleared += 4;
+            if (wipeTotal === 0) wipeTotal = (data.cleanRatio || 0.7) * 100;
+            const progress = Math.min(100, (wipeCleared / wipeTotal) * 100);
+            mask.style.opacity = String(Math.max(0, 1 - progress / 100));
+            updateProgress(progress, '清洁进度');
+            if (progress > 34) markChecklist(shell, 0);
+            if (progress > 67) markChecklist(shell, 1);
 
-        // 触摸事件
-        area.addEventListener('touchstart', startErase, { passive: false });
-        document.addEventListener('touchmove', moveErase, { passive: false });
-        document.addEventListener('touchend', endErase);
-
-        function eraseAt(e) {
-            const rect = area.getBoundingClientRect();
-
-            // 通过降低覆盖层透明度来模拟擦拭
-            overlay.style.opacity = Math.max(0, parseFloat(overlay.style.opacity || '1') - 0.02);
-
-            wipeCleared += 3;
-            if (wipeTotal === 0) wipeTotal = data.cleanRatio * 100;
-            dom.status.textContent = '清洁进度 ' + Math.min(100, Math.round((wipeCleared / wipeTotal) * 100)) + '%';
-
-            if (wipeCleared >= wipeTotal) {
-                overlay.style.opacity = '0';
+            if (progress >= 100 && !isCompleting) {
                 hint.textContent = '清洁完成';
-                hint.style.display = 'flex';
-                setTimeout(minigameComplete, 500);
+                markChecklist(shell, 2);
+                finishWithDelay(shell, '面容已整理。');
             }
         }
+
+        wipePad.addEventListener('mousedown', begin);
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', stop);
+        wipePad.addEventListener('touchstart', begin, { passive: false });
+        document.addEventListener('touchmove', move, { passive: false });
+        document.addEventListener('touchend', stop);
+
+        addLog(shell, '系统：在工作区拖拽，擦去覆盖层。');
+        updateProgress(0, '清洁进度');
     }
 
-    // ================================================================
-    // 小游戏类型 4: 回顾（第七天用）
-    // ================================================================
-    /**
-     * 渲染回顾小游戏
-     * 滑动浏览七天里送别的每一个人和他们的物品
-     */
-    function renderReview(data) {
-        dom.title.textContent = data.name + ' — 最后的入俭';
-        dom.area.appendChild(renderTaskCard(data));
-
-        // 第七天的回顾数据
+    function renderReview(data, shell) {
         const reviewItems = [
-            { day: '第一天', name: '林建国', desc: '穿着深蓝色旧夹克，针脚密密麻麻——那是孙女缝的。' },
-            { day: '第二天', name: '赵德明', desc: '深灰色西装，领带整理得整整齐齐。抽屉里有一本记录着所有支出的小本子。' },
-            { day: '第三天', name: '周明远', desc: '黑色西装，眉头终于舒展开了。桌上放着改到第八版的报告。' },
-            { day: '第四天', name: '白羽', desc: '蓝裙子，枕边放着一包咖啡豆。小本子上的字是"我在。我一直都在。"' },
-            { day: '第五天', name: '吴静宜', desc: '素色衣服，头发上别着那个旧发卡——小时候妹妹送给她的。' },
-            { day: '第六天', name: '秦桂英', desc: '红色毛衣，像一团安静的火。旁边放着一盏小灯。' },
+            { day: '第一天', name: '林建国', desc: '深蓝色旧夹克，针脚密密麻麻。' },
+            { day: '第二天', name: '赵德明', desc: '深灰色西装，领带整理得整整齐齐。' },
+            { day: '第三天', name: '周明远', desc: '眉头终于舒展开，报告停在第八版。' },
+            { day: '第四天', name: '白羽', desc: '蓝裙子，枕边放着一包咖啡豆。' },
+            { day: '第五天', name: '吴静宜', desc: '素色衣服，头发上别着旧发卡。' },
+            { day: '第六天', name: '秦桂英', desc: '红色毛衣，像一团安静的火。' },
         ];
 
-        reviewIndex = 0;
+        const viewer = document.createElement('div');
+        viewer.className = 'mini-review-terminal';
+        shell.controls.appendChild(viewer);
 
-        const container = document.createElement('div');
-        container.className = 'mini-review-container';
-        dom.area.appendChild(container);
-        renderReviewItem(reviewItems[0], reviewItems.length);
-
-        function renderReviewItem(item, total) {
-            container.innerHTML = '';
-
-            const card = document.createElement('div');
-            card.className = 'mini-review-item';
-            card.innerHTML = '<div class="mini-review-day">' + item.day + '</div>'
+        function draw() {
+            const item = reviewItems[reviewIndex];
+            viewer.innerHTML = '<div class="mini-review-day">' + item.day + '</div>'
                 + '<div class="mini-review-name">' + item.name + '</div>'
-                + '<div class="mini-review-item-desc">' + item.desc + '</div>';
+                + '<p>' + item.desc + '</p>'
+                + '<div class="mini-review-actions">'
+                + '<button class="mini-prev">上一条</button>'
+                + '<button class="mini-next">' + (reviewIndex === reviewItems.length - 1 ? '完成' : '下一条') + '</button>'
+                + '</div>';
 
-            const nav = document.createElement('div');
-            nav.className = 'mini-review-nav';
-
-            const prevBtn = document.createElement('button');
-            prevBtn.textContent = '← 上一条';
-            prevBtn.disabled = reviewIndex === 0;
-            prevBtn.addEventListener('click', function () {
+            const prev = viewer.querySelector('.mini-prev');
+            const next = viewer.querySelector('.mini-next');
+            prev.disabled = reviewIndex === 0;
+            prev.addEventListener('click', function () {
                 if (reviewIndex > 0) {
                     reviewIndex--;
-                    renderReviewItem(reviewItems[reviewIndex], reviewItems.length);
+                    draw();
                 }
             });
-
-            const nextBtn = document.createElement('button');
-            nextBtn.textContent = '下一条 →';
-            nextBtn.addEventListener('click', function () {
-                if (reviewIndex < total - 1) {
+            next.addEventListener('click', function () {
+                if (reviewIndex < reviewItems.length - 1) {
                     reviewIndex++;
-                    renderReviewItem(reviewItems[reviewIndex], reviewItems.length);
+                    markChecklist(shell, Math.min(2, Math.floor(reviewIndex / 2)));
+                    addLog(shell, '记录：确认 ' + reviewItems[reviewIndex].name + '。');
+                    updateProgress((reviewIndex / (reviewItems.length - 1)) * 100, '回顾进度');
+                    draw();
                 } else {
-                    // 最后一页，点击后完成
-                    minigameComplete();
+                    markChecklist(shell, 2);
+                    finishWithDelay(shell, '回顾完成。');
                 }
             });
-            if (reviewIndex === total - 1) nextBtn.textContent = '完成';
-
-            nav.appendChild(prevBtn);
-            nav.appendChild(nextBtn);
-
-            container.appendChild(card);
-            container.appendChild(nav);
         }
+
+        draw();
+        addLog(shell, '系统：逐条确认这七天的送别记录。');
+        updateProgress(0, '回顾进度');
     }
 
-    function renderTaskCard(data) {
-        const card = document.createElement('div');
-        card.className = 'mini-task-card';
-        card.innerHTML = '<div class="mini-task-label">今日委托</div>'
-            + '<div class="mini-task-name">' + data.name + '</div>'
-            + '<div class="mini-task-desc">' + (data.desc || '认真完成最后的整理。') + '</div>';
-        return card;
+    function finishWithDelay(shell, message) {
+        if (isCompleting) return;
+        isCompleting = true;
+        addLog(shell, message);
+        dom.area.classList.add('complete');
+        dom.status.textContent = '完成';
+        setTimeout(minigameComplete, 800);
     }
 
-    // ================================================================
-    // 小游戏完成
-    // ================================================================
-    /**
-     * 小游戏完成，回调到 GameController
-     */
     function minigameComplete() {
-        stopHoldTimer();
+        isCompleting = false;
         if (typeof GameController !== 'undefined' && GameController.onMinigameComplete) {
             GameController.onMinigameComplete();
         }
     }
 
-    /**
-     * 跳过小游戏
-     */
     function skipMinigame() {
-        stopHoldTimer();
-        if (typeof GameController !== 'undefined' && GameController.onMinigameComplete) {
-            GameController.onMinigameComplete();
-        }
+        minigameComplete();
     }
 
-    /**
-     * 停止长按定时器
-     */
-    function stopHoldTimer() {
-        if (holdTimer) {
-            clearTimeout(holdTimer);
-            holdTimer = null;
-        }
-    }
-
-    /**
-     * 隐藏小游戏界面
-     */
     function hide() {
         dom.ui.classList.add('hidden');
+        dom.area.classList.remove('complete');
     }
 
-    // ================================================================
-    // 公开 API
-    // ================================================================
     return {
         init: init,
         start: start,

@@ -41,40 +41,59 @@ html, body {
     inset: 0;
     z-index: 0;
     transition: background 2s ease;
-    /* 默认深色渐变 */
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background:
+        linear-gradient(180deg, rgba(26, 26, 46, 0.32) 0%, rgba(15, 52, 96, 0.50) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 
 /* 背景预设（通过 JS 切换类名来改变背景） */
 #background-layer.bg-gray {
-    background: linear-gradient(180deg, #2c2c2c 0%, #3a3a3a 100%);
+    background:
+        linear-gradient(180deg, rgba(44, 44, 44, 0.34) 0%, rgba(58, 58, 58, 0.58) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 #background-layer.bg-pink {
-    background: linear-gradient(180deg, #4a1942 0%, #6b2d5b 50%, #3d1f3d 100%);
+    background:
+        linear-gradient(180deg, rgba(74, 25, 66, 0.44) 0%, rgba(107, 45, 91, 0.54) 50%, rgba(61, 31, 61, 0.66) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 #background-layer.bg-purple {
-    background: linear-gradient(180deg, #2d1b69 0%, #4a2c8a 50%, #1a0f40 100%);
+    background:
+        linear-gradient(180deg, rgba(45, 27, 105, 0.50) 0%, rgba(74, 44, 138, 0.56) 50%, rgba(26, 15, 64, 0.72) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 #background-layer.bg-red {
-    background: linear-gradient(180deg, #4a1a1a 0%, #6b2020 50%, #3a0f0f 100%);
+    background:
+        linear-gradient(180deg, rgba(74, 26, 26, 0.52) 0%, rgba(107, 32, 32, 0.58) 50%, rgba(58, 15, 15, 0.74) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 #background-layer.bg-black {
-    background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+    background:
+        linear-gradient(180deg, rgba(3, 3, 3, 0.76) 0%, rgba(17, 17, 17, 0.86) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 #background-layer.bg-white {
-    background: linear-gradient(180deg, #e8e8e8 0%, #f5f5f5 100%);
+    background:
+        linear-gradient(180deg, rgba(232, 232, 232, 0.72) 0%, rgba(245, 245, 245, 0.82) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 /* 场景：事务所室内 */
 #background-layer.bg-interior {
-    background: linear-gradient(180deg, #2a2420 0%, #3a3028 50%, #1e1a16 100%);
+    background:
+        linear-gradient(180deg, rgba(42, 36, 32, 0.18) 0%, rgba(30, 26, 22, 0.38) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 /* 场景：室内暗色（晚上） */
 #background-layer.bg-night {
-    background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+    background:
+        linear-gradient(180deg, rgba(13, 17, 23, 0.62) 0%, rgba(22, 27, 34, 0.78) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 /* 场景：白色（尾声） */
 #background-layer.bg-final {
-    background: linear-gradient(180deg, #f0f0f0 0%, #ffffff 100%);
+    background:
+        linear-gradient(180deg, rgba(240, 240, 240, 0.78) 0%, rgba(255, 255, 255, 0.90) 100%),
+        url("../images/scene/会客室.png") center center / cover no-repeat;
 }
 
 /* --- 视觉小说对话界面 --- */
@@ -85,6 +104,42 @@ html, body {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+}
+
+/* --- 角色立绘层 --- */
+#character-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.character-sprite {
+    position: absolute;
+    bottom: 176px;
+    width: min(34vw, 440px);
+    max-height: calc(100vh - 220px);
+    object-fit: contain;
+    object-position: bottom center;
+    opacity: 0.72;
+    filter: brightness(0.78) saturate(0.9);
+    transform: translateY(18px) scale(0.98);
+    transition: opacity 0.28s ease, filter 0.28s ease, transform 0.28s ease;
+}
+
+.character-sprite.left {
+    left: clamp(20px, 7vw, 130px);
+}
+
+.character-sprite.right {
+    right: clamp(20px, 7vw, 130px);
+}
+
+.character-sprite.speaking {
+    opacity: 1;
+    filter: brightness(1.05) saturate(1);
+    transform: translateY(0) scale(1);
 }
 
 /* 顶部功能栏 */
@@ -135,6 +190,7 @@ html, body {
 /* 对话文本框 */
 #dialogue-box {
     position: relative;
+    z-index: 12;
     width: 100%;
     min-height: 200px;
     max-height: 45vh;
@@ -214,4 +270,25 @@ html, body {
 @keyframes notifOut {
     from { opacity: 1; }
     to { opacity: 0; }
+}
+
+@media (max-width: 720px) {
+    .character-sprite {
+        bottom: 184px;
+        width: 46vw;
+        max-height: calc(100vh - 250px);
+    }
+
+    .character-sprite.left {
+        left: -8vw;
+    }
+
+    .character-sprite.right {
+        right: -8vw;
+    }
+
+    #dialogue-box {
+        min-height: 220px;
+        padding: 18px 20px 26px;
+    }
 }

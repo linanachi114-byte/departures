@@ -92,8 +92,21 @@ const GameEvening = (function () {
      * 渲染手机新闻列表
      */
     function renderPhone() {
+        const phone = document.createElement('div');
+        phone.id = 'phone-view';
+        phone.innerHTML = '<div class="phone-shell">'
+            + '<div class="phone-speaker"></div>'
+            + '<div class="phone-screen">'
+            + '<div class="phone-brand">真理之眼</div>'
+            + '<div class="phone-feed"></div>'
+            + '<div class="phone-nav"><span>↶</span><span>⌂</span></div>'
+            + '</div>'
+            + '</div>';
+        const feed = phone.querySelector('.phone-feed');
+
         if (currentDayNews.length === 0) {
-            dom.content.innerHTML = '<p style="text-align:center;color:#555;padding:40px;">今天没有新消息。</p>';
+            feed.innerHTML = '<p class="phone-empty">今天没有新消息。</p>';
+            dom.content.appendChild(phone);
             return;
         }
 
@@ -101,15 +114,18 @@ const GameEvening = (function () {
         currentDayNews.forEach(function (news, index) {
             const card = document.createElement('div');
             card.className = 'news-card';
-            card.innerHTML = '<div class="news-card-title">' + news.title + '</div>'
+            card.innerHTML = '<div class="news-card-index">Lana Smithee 报道 / 0' + (index + 1) + '</div>'
+                + '<div class="news-card-title">' + news.title + '</div>'
                 + '<div class="news-card-summary">' + news.summary + '</div>';
 
             card.addEventListener('click', function () {
                 showNewsDetail(news);
             });
 
-            dom.content.appendChild(card);
+            feed.appendChild(card);
         });
+
+        dom.content.appendChild(phone);
     }
 
     /**
@@ -147,7 +163,14 @@ const GameEvening = (function () {
         // 房间展示区
         const display = document.createElement('div');
         display.id = 'room-display';
-        display.innerHTML = '<div class="room-wall"></div><div class="room-floor"></div>';
+        display.innerHTML = '<div class="room-window"><span></span></div>'
+            + '<div class="room-ac"></div>'
+            + '<div class="room-poster">BEST<br>BOSS</div>'
+            + '<div class="room-shelves"></div>'
+            + '<div class="room-desk"><span></span></div>'
+            + '<div class="room-character"></div>'
+            + '<div class="room-crates"></div>'
+            + '<div class="room-floor"></div>';
 
         // 渲染已购买的家具
         renderFurnitureInRoom(display);
@@ -157,9 +180,9 @@ const GameEvening = (function () {
         shop.id = 'room-shop';
 
         if (currentShopItems.length === 0) {
-            shop.innerHTML = '<h3>房间</h3><p style="color:#555;font-size:13px;">今天没有新的家具可以购买。</p>';
+            shop.innerHTML = '<h3>商店</h3><p class="shop-empty">今天没有新的家具可以购买。</p>';
         } else {
-            shop.innerHTML = '<h3>家具商店</h3>';
+            shop.innerHTML = '<h3>商店</h3>';
 
             currentShopItems.forEach(function (item) {
                 const itemDiv = document.createElement('div');
@@ -195,15 +218,32 @@ const GameEvening = (function () {
      */
     function renderFurnitureInRoom(container) {
         ownedFurniture.forEach(function (furnId) {
-            // 从商店物品中找到对应的家具配置
-            const furnData = currentShopItems.find(function (i) { return i.id === furnId; });
-            // 也检查全局（跨天购买的家具）
+            const furnData = findFurnitureData(furnId);
             if (!furnData) return;
 
             const furnDiv = document.createElement('div');
             furnDiv.className = 'room-furniture ' + furnData.className;
             container.appendChild(furnDiv);
         });
+    }
+
+    function findFurnitureData(furnId) {
+        const todayItem = currentShopItems.find(function (item) { return item.id === furnId; });
+        if (todayItem) return todayItem;
+
+        if (typeof DAYS_DATA === 'undefined') return null;
+        const dayKeys = Object.keys(DAYS_DATA);
+        for (var i = 0; i < dayKeys.length; i++) {
+            const commands = DAYS_DATA[dayKeys[i]].commands || [];
+            for (var j = 0; j < commands.length; j++) {
+                if (commands[j].type !== 'evening' || !commands[j].data || !commands[j].data.shopItems) continue;
+                const found = commands[j].data.shopItems.find(function (item) {
+                    return item.id === furnId;
+                });
+                if (found) return found;
+            }
+        }
+        return null;
     }
 
     /**
@@ -226,6 +266,7 @@ const GameEvening = (function () {
         updateMoneyDisplay();
 
         // 刷新房间显示
+        dom.content.innerHTML = '';
         renderRoom();
 
         GameUI.notify('购买了 ' + item.name);
