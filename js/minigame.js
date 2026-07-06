@@ -133,6 +133,15 @@ const GameMinigame = (function () {
         if (item) item.classList.add('done');
     }
 
+    function addStageToken(shell, label, icon) {
+        const token = document.createElement('div');
+        token.className = 'mini-stage-token';
+        token.innerHTML = '<span>' + icon + '</span><small>' + label + '</small>';
+        token.style.left = (18 + (completedSteps % 4) * 17) + '%';
+        token.style.top = (58 + (completedSteps % 2) * 12) + '%';
+        shell.stage.appendChild(token);
+    }
+
     function updateProgress(percent, message) {
         const clamped = Math.max(0, Math.min(100, Math.round(percent)));
         dom.status.textContent = message + ' ' + clamped + '%';
@@ -158,6 +167,7 @@ const GameMinigame = (function () {
                 item.classList.remove('active');
                 item.querySelector('.mini-tool-state').textContent = '完成';
                 addLog(shell, '记录：' + step.text);
+                addStageToken(shell, step.text, step.icon);
                 completedSteps++;
                 markChecklist(shell, Math.min(index, 2));
                 updateProgress((completedSteps / data.steps.length) * 100, '仪式进度');
@@ -204,6 +214,7 @@ const GameMinigame = (function () {
             holding = true;
             startTime = Date.now();
             hold.classList.add('holding');
+            shell.stage.classList.add('working');
             hold.innerHTML = '<span>正在处理</span><strong>不要松手</strong>';
             addLog(shell, '记录：动作开始。');
             animate();
@@ -215,6 +226,7 @@ const GameMinigame = (function () {
             holding = false;
             fill.style.width = '0%';
             hold.classList.remove('holding');
+            shell.stage.classList.remove('working');
             hold.innerHTML = '<span>按住工具</span><strong>保持稳定</strong>';
             addLog(shell, '提示：动作中断，重新校准。');
             updateProgress(0, '稳定度');
@@ -233,6 +245,8 @@ const GameMinigame = (function () {
                 holding = false;
                 hold.classList.remove('holding');
                 hold.classList.add('completed');
+                shell.stage.classList.remove('working');
+                shell.stage.classList.add('settled');
                 hold.innerHTML = '<span>完成</span><strong>动作平稳</strong>';
                 markChecklist(shell, 2);
                 finishWithDelay(shell, '整理完成。');
@@ -293,6 +307,7 @@ const GameMinigame = (function () {
             if (progress >= 100 && !isCompleting) {
                 hint.textContent = '清洁完成';
                 markChecklist(shell, 2);
+                shell.stage.classList.add('settled');
                 finishWithDelay(shell, '面容已整理。');
             }
         }

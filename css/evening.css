@@ -156,39 +156,94 @@
     font-size: 30px;
 }
 
-.news-detail {
-    position: absolute;
-    inset: 96px 50%;
-    transform: translateX(-50%);
-    width: min(560px, 90vw);
-    height: min(620px, calc(100vh - 160px));
-    background: #f2d9d2;
-    border: 5px solid #f1f1df;
-    box-shadow: 8px 8px 0 #0b2230;
-    z-index: 4;
-    padding: 22px;
-    overflow-y: auto;
-    color: #171417;
+.news-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6d5961;
 }
 
-.news-detail-close {
-    height: 38px;
-    padding: 0 18px;
+.news-like-btn,
+.news-thread-like,
+.news-comment-like,
+.news-thread-back {
     background: #050505;
     border: none;
     color: #f1f1df;
     cursor: pointer;
-    margin-bottom: 16px;
 }
 
-.news-detail h3 {
+.news-like-btn {
+    padding: 4px 8px;
+}
+
+.news-thread {
+    min-height: 100%;
+    padding: 2px 0 18px;
+}
+
+.news-thread-back {
+    height: 34px;
+    padding: 0 12px;
+    margin-bottom: 14px;
+}
+
+.news-thread-index {
+    color: #925d72;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.news-thread h3 {
     font-size: 22px;
-    margin-bottom: 16px;
+    line-height: 1.35;
+    margin-bottom: 12px;
 }
 
-.news-detail p {
-    line-height: 1.9;
+.news-thread-body {
+    background: #fff1ea;
+    border: 4px solid #050505;
+    padding: 12px;
+    line-height: 1.85;
     margin-bottom: 12px;
+}
+
+.news-thread-body p {
+    margin-bottom: 10px;
+}
+
+.news-thread-like {
+    height: 34px;
+    padding: 0 14px;
+    margin-bottom: 14px;
+}
+
+.news-comments {
+    display: grid;
+    gap: 10px;
+}
+
+.news-comment {
+    background: #f7e7df;
+    border-left: 5px solid #050505;
+    padding: 10px 10px 10px 12px;
+}
+
+.news-comment-user {
+    color: #925d72;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.news-comment-text {
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.news-comment-like {
+    padding: 4px 8px;
 }
 
 #room-view {
@@ -328,6 +383,21 @@
     border-radius: 50%;
 }
 
+.room-has-bed .room-character {
+    left: auto;
+    right: 7%;
+    bottom: 13%;
+    width: 26%;
+    height: 14%;
+    background: url("../images/furniture/undertaker-bed-phone.svg") center bottom / contain no-repeat;
+    border: none;
+    z-index: 8;
+}
+
+.room-has-bed .room-character::before {
+    content: none;
+}
+
 .room-crates {
     position: absolute;
     right: 12%;
@@ -400,48 +470,43 @@
 }
 
 .furniture-bed {
-    width: 24%;
-    height: 10%;
+    width: 28%;
+    height: 18%;
     right: 5%;
-    bottom: 7%;
-    background: #89a5b5;
-    border: 4px solid #203849;
+    bottom: 6%;
+    background: url("../images/furniture/bed.svg") center bottom / contain no-repeat;
 }
 
 .furniture-desk {
-    width: 18%;
-    height: 8%;
-    left: 10%;
-    bottom: 7%;
-    background: #8d5b43;
-    border: 4px solid #432a21;
+    width: 19%;
+    height: 18%;
+    left: 8%;
+    bottom: 5%;
+    background: url("../images/furniture/desk.svg") center bottom / contain no-repeat;
 }
 
 .furniture-plant {
-    width: 44px;
-    height: 86px;
+    width: 70px;
+    height: 110px;
     left: 4%;
-    bottom: 8%;
-    background: #245d45;
-    border: 4px solid #173328;
+    bottom: 6%;
+    background: url("../images/furniture/plant.svg") center bottom / contain no-repeat;
 }
 
 .furniture-lamp {
-    width: 36px;
-    height: 116px;
+    width: 68px;
+    height: 130px;
     left: 43%;
-    bottom: 14%;
-    background: #d6bd70;
-    border: 4px solid #6d5828;
+    bottom: 13%;
+    background: url("../images/furniture/lamp.svg") center bottom / contain no-repeat;
 }
 
 .furniture-shelf {
     width: 15%;
-    height: 20%;
+    height: 25%;
     right: 5%;
     top: 8%;
-    background: #5d463a;
-    border: 4px solid #30231e;
+    background: url("../images/furniture/shelf.svg") center center / contain no-repeat;
 }
 
 .furniture-painting {
@@ -449,17 +514,15 @@
     height: 16%;
     left: 38%;
     top: 9%;
-    background: #e6d2c1;
-    border: 5px solid #2a2a2a;
+    background: url("../images/furniture/painting.svg") center center / contain no-repeat;
 }
 
 .furniture-flowers {
-    width: 50px;
-    height: 86px;
+    width: 68px;
+    height: 100px;
     right: 30%;
     bottom: 14%;
-    background: #e85f71;
-    border: 4px solid #54262d;
+    background: url("../images/furniture/flowers.svg") center bottom / contain no-repeat;
 }
 
 #evening-footer {

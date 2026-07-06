@@ -17,6 +17,7 @@ const GameEvening = (function () {
     let ownedFurniture = [];    // 已购买的家具列表
     let currentMoney = 0;       // 当前金钱
     let currentShopItems = [];  // 当前可购买的家具列表
+    let likedTargets = {};      // 当晚手机点赞状态
 
     // --- DOM 引用 ---
     let dom = {};
@@ -110,44 +111,105 @@ const GameEvening = (function () {
             return;
         }
 
-        // 每条新闻的卡片
+        renderNewsList(feed);
+        dom.content.appendChild(phone);
+    }
+
+    function renderNewsList(feed) {
+        feed.innerHTML = '';
         currentDayNews.forEach(function (news, index) {
+            const comments = getNewsComments(news, index);
             const card = document.createElement('div');
             card.className = 'news-card';
             card.innerHTML = '<div class="news-card-index">Lana Smithee 报道 / 0' + (index + 1) + '</div>'
                 + '<div class="news-card-title">' + news.title + '</div>'
-                + '<div class="news-card-summary">' + news.summary + '</div>';
+                + '<div class="news-card-summary">' + news.summary + '</div>'
+                + '<div class="news-card-meta">'
+                + '<span>' + comments.length + ' 回复</span>'
+                + '<button class="news-like-btn" data-like="post-' + index + '">♡ ' + getLikeCount('post-' + index, 8 + index * 3) + '</button>'
+                + '</div>';
 
             card.addEventListener('click', function () {
-                showNewsDetail(news);
+                showNewsDetail(feed, news, index);
+            });
+            card.querySelector('.news-like-btn').addEventListener('click', function (e) {
+                e.stopPropagation();
+                toggleLike(e.currentTarget.dataset.like);
+                renderNewsList(feed);
             });
 
             feed.appendChild(card);
         });
-
-        dom.content.appendChild(phone);
     }
 
     /**
      * 显示新闻详情（全屏覆盖）
      * @param {Object} news - 新闻数据
      */
-    function showNewsDetail(news) {
-        // 创建详情覆盖层
-        const detail = document.createElement('div');
-        detail.className = 'news-detail';
+    function showNewsDetail(feed, news, index) {
+        const comments = getNewsComments(news, index);
+        feed.innerHTML = '<div class="news-thread">'
+            + '<button class="news-thread-back">← 返回列表</button>'
+            + '<div class="news-thread-index">Lana Smithee 报道 / 0' + (index + 1) + '</div>'
+            + '<h3>' + news.title + '</h3>'
+            + '<div class="news-thread-body"><p>' + news.content.replace(/\n/g, '</p><p>') + '</p></div>'
+            + '<button class="news-thread-like" data-like="post-' + index + '">♡ 点赞 ' + getLikeCount('post-' + index, 8 + index * 3) + '</button>'
+            + '<div class="news-comments"></div>'
+            + '</div>';
 
-        let html = '<button class="news-detail-close">返回</button>';
-        html += '<h3>' + news.title + '</h3>';
-        html += '<p>' + news.content.replace(/\n/g, '</p><p>') + '</p>';
-
-        detail.innerHTML = html;
-        dom.content.appendChild(detail);
-
-        // 关闭按钮
-        detail.querySelector('.news-detail-close').addEventListener('click', function () {
-            dom.content.removeChild(detail);
+        const commentsEl = feed.querySelector('.news-comments');
+        comments.forEach(function (comment, commentIndex) {
+            const likeKey = 'post-' + index + '-comment-' + commentIndex;
+            const row = document.createElement('div');
+            row.className = 'news-comment';
+            row.innerHTML = '<div class="news-comment-user">' + comment.user + '</div>'
+                + '<div class="news-comment-text">' + comment.text + '</div>'
+                + '<button class="news-comment-like" data-like="' + likeKey + '">♡ ' + getLikeCount(likeKey, comment.likes) + '</button>';
+            row.querySelector('button').addEventListener('click', function (e) {
+                toggleLike(e.currentTarget.dataset.like);
+                showNewsDetail(feed, news, index);
+            });
+            commentsEl.appendChild(row);
         });
+
+        feed.querySelector('.news-thread-back').addEventListener('click', function () {
+            renderNewsList(feed);
+        });
+        feed.querySelector('.news-thread-like').addEventListener('click', function (e) {
+            toggleLike(e.currentTarget.dataset.like);
+            showNewsDetail(feed, news, index);
+        });
+    }
+
+    function toggleLike(key) {
+        likedTargets[key] = !likedTargets[key];
+    }
+
+    function getLikeCount(key, base) {
+        return base + (likedTargets[key] ? 1 : 0);
+    }
+
+    function getNewsComments(news, index) {
+        if (news.comments && news.comments.length > 0) return news.comments;
+
+        const banks = [
+            [
+                { user: '雨停前', text: '我排了三个小时队，前面的人一直在给家里打电话。没人抱怨。', likes: 12 },
+                { user: '旧城区小卖部', text: '店里还有水和电池，老人优先。我会开到天黑。', likes: 21 },
+                { user: '匿名用户', text: '新闻说有序撤离，可我只想回家吃顿饭。', likes: 9 },
+            ],
+            [
+                { user: '天台观测者', text: '昨晚的天空不是折射。我拍到了，但上传失败了。', likes: 16 },
+                { user: '不想睡', text: '他们越说不要恐慌，我越觉得应该给妈妈打电话。', likes: 18 },
+                { user: '三号线末班', text: '车厢里很安静，大家都在看同一条推送。', likes: 7 },
+            ],
+            [
+                { user: '南区护士', text: '医院走廊今天多了很多花。有人说花比安慰有用。', likes: 19 },
+                { user: '路过', text: '如果还有几天，至少别把话留到最后一天。', likes: 24 },
+                { user: '灰色雨衣', text: '我给我爸发了“晚饭吃什么”，他回了“都行”。真好。', likes: 13 },
+            ],
+        ];
+        return banks[index % banks.length];
     }
 
     // ================================================================
@@ -163,6 +225,9 @@ const GameEvening = (function () {
         // 房间展示区
         const display = document.createElement('div');
         display.id = 'room-display';
+        ownedFurniture.forEach(function (furnId) {
+            display.classList.add('room-has-' + furnId);
+        });
         display.innerHTML = '<div class="room-window"><span></span></div>'
             + '<div class="room-ac"></div>'
             + '<div class="room-poster">BEST<br>BOSS</div>'

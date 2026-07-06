@@ -251,7 +251,6 @@ const VNEngine = (function () {
                 if (command.bg) setScene(command.bg);
                 if (isSkip) {
                     showImmediateDialogue(command.speaker, command.text, command.bg, command.color);
-                    scheduleSkipStep();
                 } else {
                     showDialogue(command.speaker, command.text, command.color);
                 }
@@ -261,7 +260,6 @@ const VNEngine = (function () {
                 recordHistory('', command.text);
                 if (isSkip) {
                     showImmediateDialogue('', command.text, command.bg, command.color);
-                    scheduleSkipStep();
                 } else {
                     showNarration(command.text, command.bg);
                 }
@@ -666,21 +664,24 @@ const VNEngine = (function () {
         updateCharacterSprites('');
     }
 
-    function scheduleSkipStep() {
-        if (!isSkip || dom.vnUi.classList.contains('hidden')) return;
-        if (skipTimer) clearTimeout(skipTimer);
-        skipTimer = setTimeout(function () {
-            skipTimer = null;
-            if (isSkip && !dom.vnUi.classList.contains('hidden')) {
-                handleDialogueClick();
-            }
-        }, 70);
+    function skipLoopTick() {
+        if (!isSkip || dom.vnUi.classList.contains('hidden')) {
+            setSkipMode(false);
+            return;
+        }
+        if (isPanelOpen()) return;
+        for (var i = 0; i < 4; i++) {
+            if (!isSkip || dom.vnUi.classList.contains('hidden')) break;
+            if (isTyping) revealCurrentText();
+            else executeNext();
+        }
     }
 
     function setSkipMode(enabled) {
+        if (enabled === isSkip && (enabled === false || skipTimer)) return;
         isSkip = enabled;
         if (!isSkip && skipTimer) {
-            clearTimeout(skipTimer);
+            clearInterval(skipTimer);
             skipTimer = null;
         }
         const btn = document.getElementById('btn-skip');
@@ -692,7 +693,8 @@ const VNEngine = (function () {
                 clearTimeout(autoPlayTimer);
                 autoPlayTimer = null;
             }
-            scheduleSkipStep();
+            skipLoopTick();
+            skipTimer = setInterval(skipLoopTick, 35);
         }
     }
 
